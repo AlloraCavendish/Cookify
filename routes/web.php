@@ -1,11 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\RecipeController;
 use App\Http\Controllers\User\FavouriteController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\IngredientController;
 use App\Http\Controllers\User\UserController;
 
 /*
@@ -44,43 +41,10 @@ Route::middleware(['auth'])->group(function () {
     // 🔹 Common dashboard redirect
     Route::get('/dashboard', function () {
         if (auth()->user()->is_admin) {
-            return redirect()->route('admin.dashboard');
+            return redirect('/admin');
         }
         return redirect()->route('user.dashboard');
     })->name('dashboard');
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Routes
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('admin')->prefix('admin')->group(function () {
-
-        // ---- Admin Dashboard
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-
-        // Recipes CRUD
-        Route::get('/recipes', [RecipeController::class, 'index'])->name('admin.recipes.index');
-        Route::get('/recipes/create', [RecipeController::class, 'create'])->name('admin.recipes.create');
-        Route::post('/recipes', [RecipeController::class, 'store'])->name('admin.recipes.store');
-        Route::get('/recipes/{recipe}/edit', [RecipeController::class, 'edit'])->name('admin.recipes.edit');
-        Route::put('/recipes/{recipe}', [RecipeController::class, 'update'])->name('admin.recipes.update');
-        Route::delete('/recipes/{recipe}', [RecipeController::class, 'destroy'])->name('admin.recipes.destroy');
-
-        // ---- Ingredients CRUD
-        Route::get('/ingredients', [IngredientController::class, 'index'])->name('admin.ingredients.index');
-        Route::get('/ingredients/create', [IngredientController::class, 'create'])->name('admin.ingredients.create');
-        Route::post('/ingredients', [IngredientController::class, 'store'])->name('admin.ingredients.store');
-        Route::get('/ingredients/{ingredient}/edit', [IngredientController::class, 'edit'])->name('admin.ingredients.edit');
-        Route::put('/ingredients/{ingredient}', [IngredientController::class, 'update'])->name('admin.ingredients.update');
-        Route::delete('/ingredients/{ingredient}', [IngredientController::class, 'destroy'])->name('admin.ingredients.destroy');
-
-        // Extra AJAX helpers
-        Route::post('/ingredients/check-name', [IngredientController::class, 'checkName'])->name('admin.ingredients.checkName');
-        Route::get('/ingredients/search', [IngredientController::class, 'search'])->name('admin.ingredients.search');
-    });
-
 
     /*
     |--------------------------------------------------------------------------

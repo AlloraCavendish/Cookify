@@ -2,179 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Cookify: Smart Recipe Recommendation System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 20px;">
+<body class="bg-orange-50 min-h-screen">
 
-    <!-- 🔹 Navigation -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2>🍳 Cookify</h2>
-        <div>
-            @auth
-                <a href="{{ route('dashboard') }}" style="margin-right:10px;">Dashboard</a>
-                <form action="{{ route('logout') }}" method="POST" style="display:inline;">
-                    @csrf
-                    <button type="submit" style="padding:5px 10px;">Logout</button>
-                </form>
-            @else
-                <a href="{{ route('login') }}" style="margin-right:10px;">Login</a>
-                <a href="{{ route('register') }}">Register</a>
-            @endauth
-        </div>
-    </div>
-
-    <!-- 🔹 Search Section -->
-    <h1 style="text-align:center;">Find Recipes from Your Fridge</h1>
-
-    <form id="ingredientForm" style="text-align:center; margin-bottom:20px;">
-        <input type="text" id="ingredients" placeholder="Enter ingredients (comma separated)" style="width:60%; padding:8px;" required>
-        <button type="submit" style="padding:8px 16px;">Search</button>
-    </form>
-
-    <div id="results"></div>
-
-    <div id="pagination" style="text-align:center; margin-top:20px; display:none;">
-        <button id="prevPage" style="padding:5px 10px;">Previous</button>
-        <span id="currentPage" style="margin: 0 10px;">1</span>
-        <button id="nextPage" style="padding:5px 10px;">Next</button>
-    </div>
-
-    <script>
-        const isAuthenticated = @json(auth()->check());
-        const userFavourites = @json($favourites ?? []);
-        let currentPage = 1;
-        let totalPages = 1;
-
-        function renderRecipeCard(r, type = "ready") {
-            let cardColor = type === "ready" ? "green" : "orange";
-            let bgColor   = type === "ready" ? "#e8f5e9" : "#fff3e0";
-
-            // Check if recipe already favourited
-            let isFav = userFavourites.includes(r.id);
-            let favBtn = "";
-
-            if (isAuthenticated) {
-                favBtn = `
-                    <form method="POST" action="/favourites/${r.id}" style="display:inline; margin-left:10px;" 
-                        onsubmit="event.preventDefault(); toggleFavourite(${r.id}, ${isFav});">
-                        <button type="submit" style="background:none; border:none; color:${isFav ? 'darkred' : 'red'}; cursor:pointer;">
-                            ${isFav ? '💔 Remove' : '❤️ Save'}
+    {{-- Header --}}
+    <header class="bg-white border-b border-orange-100 shadow-sm">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🍳</span>
+                <span class="text-xl font-bold tracking-tight text-orange-900">Cookify</span>
+            </div>
+            <div class="flex items-center gap-4">
+                @auth
+                    <a href="{{ route('dashboard') }}"
+                       class="text-sm text-orange-700 hover:text-orange-900 font-medium transition">
+                        Dashboard
+                    </a>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="text-sm px-4 py-1.5 rounded-full border border-orange-300 text-orange-700 hover:bg-orange-100 transition">
+                            Logout
                         </button>
                     </form>
-                `;
-            }
+                @else
+                    <a href="{{ route('login') }}"
+                       class="text-sm text-orange-700 hover:text-orange-900 font-medium transition">
+                        Login
+                    </a>
+                    <a href="{{ route('register') }}"
+                       class="text-sm px-4 py-1.5 rounded-full bg-orange-600 text-white hover:bg-orange-700 transition">
+                        Register
+                    </a>
+                @endauth
+            </div>
+        </div>
+    </header>
 
-            return `
-                <div style="border:1px solid ${cardColor}; padding:10px; margin-bottom:10px; border-radius:5px; background:${bgColor};">
-                    <strong>${r.title}</strong>
-                    ${favBtn}
-                </div>
-            `;
-        }
+    {{-- Hero Search --}}
+    <section class="max-w-5xl mx-auto px-6 py-16 text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-3">Find Recipes from Your Fridge</h1>
+        <p class="text-gray-500 mb-8">Enter what you have and we'll find what you can cook 🥘</p>
 
-        async function toggleFavourite(recipeId, isFav) {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const url = `/favourites/${recipeId}`;
-            const method = isFav ? "DELETE" : "POST";
+        <form id="ingredientForm" class="flex gap-3 max-w-xl mx-auto">
+            <input type="text" id="ingredients"
+                placeholder="e.g. eggs, tomato, cheese"
+                class="flex-1 px-4 py-3 rounded-xl border border-orange-200 focus:outline-none focus:ring-2 focus:ring-orange-300 text-sm shadow-sm"
+                required>
+            <button type="submit"
+                class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl text-sm transition shadow-sm">
+                Search
+            </button>
+        </form>
+    </section>
 
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-                body: JSON.stringify({}) // required for POST/DELETE to avoid 419
-            });
+    {{-- Toast Notification --}}
+    <div id="toast"
+         class="fixed top-6 right-6 z-50 hidden px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all">
+    </div>
 
-            if (response.ok) {
-                // Update local list
-                if (isFav) {
-                    userFavourites = userFavourites.filter(id => id !== recipeId);
-                    alert("💔 Removed from favourites!");
-                } else {
-                    userFavourites.push(recipeId);
-                    alert("❤️ Added to favourites!");
-                }
-                fetchRecipes(currentPage); // refresh list
-            } else {
-                alert("❌ Failed to update favourites");
-            }
-        }
+    {{-- Results --}}
+    <section class="max-w-5xl mx-auto px-6 pb-16">
+        <div id="results"></div>
 
-        async function fetchRecipes(page = 1) {
-            const ingredients = document.getElementById('ingredients').value;
+        {{-- Pagination --}}
+        <div id="pagination" class="hidden flex items-center justify-center gap-4 mt-8">
+            <button id="prevPage"
+                class="px-4 py-2 rounded-xl border border-orange-200 text-orange-700 hover:bg-orange-100 text-sm transition disabled:opacity-40">
+                ← Previous
+            </button>
+            <span class="text-sm text-gray-500">Page <span id="currentPage">1</span></span>
+            <button id="nextPage"
+                class="px-4 py-2 rounded-xl border border-orange-200 text-orange-700 hover:bg-orange-100 text-sm transition disabled:opacity-40">
+                Next →
+            </button>
+        </div>
+    </section>
 
-            const response = await fetch("http://cookify.test/api/recommendations", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                },
-                body: JSON.stringify({ ingredients: ingredients, page: page })
-            });
-
-            const data = await response.json();
-
-            totalPages = data.total_pages || 1;
-            currentPage = data.page || 1;
-            document.getElementById('currentPage').textContent = currentPage;
-
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '';
-
-            // ✅ Ready recipes
-            if (data.ready && data.ready.length > 0) {
-                resultsDiv.innerHTML += '<h2 style="color:green;">✅ Ready to Cook</h2>';
-                data.ready.forEach(r => {
-                    resultsDiv.innerHTML += renderRecipeCard(r, "ready");
-                });
-            }
-
-            // ✅ Suggested recipes
-            if (data.suggested && data.suggested.length > 0) {
-                resultsDiv.innerHTML += '<h2 style="color:orange;">⚠️ Almost Ready (Buy These)</h2>';
-                data.suggested.forEach(r => {
-                    let missingHtml = '';
-                    if (r.missing_main && r.missing_main.length > 0) {
-                        missingHtml += `<div><strong>Main:</strong> ${r.missing_main.join(', ')}</div>`;
-                    }
-                    if (r.missing_optional && r.missing_optional.length > 0) {
-                        missingHtml += `<div><strong>Optional:</strong> ${r.missing_optional.join(', ')}</div>`;
-                    }
-
-                    resultsDiv.innerHTML += renderRecipeCard(r, "suggested") + missingHtml;
-                });
-            }
-
-            // ❌ No recipes found
-            if ((!data.ready || !data.ready.length) && (!data.suggested || !data.suggested.length)) {
-                resultsDiv.innerHTML = '<p style="text-align:center;">No recipes found 😢</p>';
-            }
-
-            // ✅ Show/hide pagination
-            const paginationDiv = document.getElementById('pagination');
-            paginationDiv.style.display = totalPages > 1 ? 'block' : 'none';
-
-            // Disable buttons if on first/last page
-            document.getElementById('prevPage').disabled = currentPage <= 1;
-            document.getElementById('nextPage').disabled = currentPage >= totalPages;
-        }
-
-        document.getElementById('ingredientForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            currentPage = 1; // reset to first page on new search
-            fetchRecipes(currentPage);
-        });
-
-        document.getElementById('prevPage').addEventListener('click', function() {
-            if (currentPage > 1) fetchRecipes(--currentPage);
-        });
-
-        document.getElementById('nextPage').addEventListener('click', function() {
-            if (currentPage < totalPages) fetchRecipes(++currentPage);
-        });
+    <script>
+        // Pass Laravel variables to JS
+        window.cookify = {
+            isAuthenticated: @json(auth()->check()),
+            userFavourites: @json($favourites ?? []),
+            csrfToken: "{{ csrf_token() }}"
+        };
     </script>
+<script src="{{ asset('js/main.js') }}"></script>
+
 </body>
 </html>

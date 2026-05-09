@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Favourite;
 use App\Models\Recipe;
@@ -22,10 +23,25 @@ class FavouriteController extends Controller
     // Save a recipe to favourites
     public function store(Recipe $recipe)
     {
-        Favourite::firstOrCreate([
+        $already = Favourite::where('user_id', Auth::id())
+            ->where('recipe_id', $recipe->id)
+            ->exists();
+
+        if ($already) {
+            if (request()->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Already in favourites!'], 409);
+            }
+            return back()->with('error', 'Recipe is already in your favourites!');
+        }
+
+        Favourite::create([
             'user_id' => Auth::id(),
             'recipe_id' => $recipe->id,
         ]);
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Recipe added to favourites!']);
+        }
 
         return back()->with('success', 'Recipe added to favourites!');
     }
@@ -36,6 +52,13 @@ class FavouriteController extends Controller
         Favourite::where('user_id', Auth::id())
             ->where('recipe_id', $recipe->id)
             ->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Recipe removed from favourites!'
+            ]);
+        }
 
         return back()->with('success', 'Recipe removed from favourites!');
     }

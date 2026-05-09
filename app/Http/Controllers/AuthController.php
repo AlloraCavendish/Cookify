@@ -28,9 +28,9 @@ class AuthController extends Controller
 
             // Redirect based on role
             if (auth()->user()->is_admin) {
-                return redirect()->route('admin.dashboard')->with('success', 'Welcome back, Admin!');
+                return redirect('/admin');  // Filament panel
             } else {
-                return redirect()->route('user.dashboard')->with('success', 'Welcome back!');
+                return redirect()->route('user.dashboard');
             }
         }
 
@@ -63,7 +63,7 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('dashboard')
+        return redirect()->route('user.dashboard')
         ->with('success', 'Account created!');
     }
 
