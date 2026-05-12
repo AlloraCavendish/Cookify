@@ -1,61 +1,191 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍳 Cookify — Smart Recipe Recommendation System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Cookify is a modern web-based smart recipe recommendation platform built using the Laravel ecosystem.  
+The system helps users discover recipes based on available ingredients while providing intelligent suggestions for missing items.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# ✨ Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🥗 Smart Recipe Recommendation Engine
+Cookify analyzes user-provided ingredients and categorizes recipes into:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- ✅ Ready Recipes  
+  Recipes that can be cooked immediately using available ingredients.
 
-## Learning Laravel
+- 💡 Suggested Recipes  
+  Recipes that are close matches, including:
+  - missing main ingredients
+  - missing optional ingredients
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Recommendation Features
+- Ingredient-based matching
+- Main vs optional ingredient classification
+- Cuisine filtering
+- Preparation time filtering
+- Smart sorting by fewest missing ingredients
+- Pagination support
+- Optimized caching system
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# 🛠️ Tech Stack
 
-## Laravel Sponsors
+| Technology | Purpose |
+|---|---|
+| Laravel | Backend framework |
+| Filament 3 | Admin panel |
+| Tailwind CSS | Frontend styling |
+| Livewire | Reactive Laravel components |
+| Playwright | End-to-end testing |
+| MySQL | Database |
+| Laragon | Local development environment |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+# 🎛️ Admin Panel
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Cookify uses **Filament 3** for rapid admin dashboard development.
 
-## Contributing
+Admin dashboard route:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+/admin
+```
 
-## Code of Conduct
+### Admin Features
+- Recipe CRUD
+- Ingredient CRUD
+- Form validation
+- Table management
+- Admin workflow management
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+# 📱 Responsive Frontend
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The frontend has been fully migrated to **Tailwind CSS** with responsive layouts optimized for:
 
-## License
+- Desktop
+- Tablet
+- Mobile devices
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Inline CSS styling has been removed and replaced with utility-first Tailwind classes.
+
+---
+
+# 🔐 Authentication Features
+
+Cookify includes Laravel built-in authentication features:
+
+- User registration
+- Login/logout
+- Forgot password
+- Password reset
+- Email verification
+
+---
+
+# ⚡ Recommendation API Overview
+
+The recommendation system:
+
+1. Accepts user ingredients
+2. Normalizes and validates input
+3. Matches recipes against available ingredients
+4. Separates recipes into:
+   - ready
+   - suggested
+5. Sorts suggestions by closest match
+6. Returns paginated API responses
+
+---
+
+# 🚀 Performance Optimizations
+
+Implemented optimizations include:
+
+- Eloquent eager loading
+- Query filtering
+- API pagination
+- Laravel caching (`Cache::remember`)
+- Ingredient normalization
+- Duplicate filtering
+
+---
+
+# 🧪 Automated Testing
+
+Cookify uses **Playwright** for automated browser testing.
+
+### Current Testing Capabilities
+- End-to-end testing
+- UI interaction testing
+- Browser automation
+- Workflow validation
+
+---
+
+# 📂 Project Structure
+
+```bash
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── API/
+│   │   └── Admin/
+├── Models/
+resources/
+routes/
+database/
+```
+
+---
+
+# 📈 Current Project Status
+
+## Completed
+- Laravel backend setup
+- Filament admin panel
+- Ingredient CRUD
+- Recipe CRUD
+- Responsive Tailwind frontend
+- Recommendation engine API
+- Authentication system
+- Email verification
+- Password reset
+- Playwright integration
+- Caching optimization
+
+## Planned / Future Improvements
+- Personalized recommendations
+- AI-powered suggestions
+- Nutrition tracking
+- Favorite recipes
+- Shopping list generation
+- Advanced search filters
+- Deployment pipeline
+
+---
+
+<!-- # 📸 Screenshots
+
+> Add screenshots here later
+
+Examples:
+- Homepage
+- Recommendation page
+- Admin dashboard
+- Mobile responsive layout
+
+--- -->
+
+# 👨‍💻 Author
+
+Developed by Aiman Haziq
+
+---
+
+# 📄 License
+
+This project is licensed for educational and portfolio purposes.
