@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\FavouriteController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\PasswordResetController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,10 +21,11 @@ Route::get('/', function () {
 
 // 🔹 Auth pages
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login'); // 👉 resources/views/auth/login.blade.php
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+// 5 attempts per 1 minute
 
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register'); // 👉 resources/views/auth/register.blade.php
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -30,6 +34,25 @@ Route::get('/search', function () {
     return view('main'); // 👉 maybe replace with resources/views/search/index.blade.php later
 })->name('search');
 
+Route::get('/forgot-password', [PasswordResetController::class, 'show'])->name('password.request');
+Route::post('/forgot-password', [PasswordResetController::class, 'send'])->name('password.email')->middleware('throttle:3,1');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showReset'])->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
+
+// Email verification routes
+Route::get('/email/verify', function () {
+    return view('auth.verify-email');
+})->middleware('auth')->name('verification.notice');
+
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return redirect()->route('user.dashboard')->with('success', 'Email verified!');
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
+Route::post('/email/resend', function (Request $request) {
+    $request->user()->sendEmailVerificationNotification();
+    return back()->with('status', 'Verification link sent!');
+})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +60,10 @@ Route::get('/search', function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
+
+    Route::prefix('user')->middleware(['verified'])->group(function () {
+    // all your user routes stay the same
+    });
 
     // 🔹 Common dashboard redirect
     Route::get('/dashboard', function () {

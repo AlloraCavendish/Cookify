@@ -34,9 +34,8 @@ class AuthController extends Controller
             }
         }
 
-        return back()->withErrors([
-            'email' => 'Invalid credentials.',
-        ]);
+        return back()->withErrors(['email' => 'These credentials do not match our records.'])->withInput(['email' => $request->email]);
+
     }
 
     // 🔹 Show register form
@@ -49,22 +48,25 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed', // min:6 → min:8
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'name'     => $request->name,
+            'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'is_admin' => false, // 👈 always normal user
+            'is_admin' => false,
         ]);
 
         Auth::login($user);
 
-        return redirect()->route('user.dashboard')
-        ->with('success', 'Account created!');
+        // Send verification email
+        $user->sendEmailVerificationNotification();
+
+        return redirect()->route('verification.notice')
+            ->with('success', 'Account created! Please verify your email.');
     }
 
     // 🔹 Logout

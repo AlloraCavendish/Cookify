@@ -18,7 +18,7 @@ function renderRecipeCard(r, type = "ready") {
 
     const favBtn = isAuthenticated ? `
         <button onclick="toggleFavourite(${r.id}, ${isFav})" id="fav-btn-${r.id}"
-            class="text-sm px-3 py-1 rounded-full border ${isFav
+            class="text-xs md:text-sm px-3 py-1 rounded-full border flex-shrink-0 ${isFav
                 ? 'border-red-200 text-red-500 hover:bg-red-50'
                 : 'border-orange-200 text-orange-500 hover:bg-orange-50'} transition">
             ${isFav ? '💔 Remove' : '❤️ Save'}
@@ -26,12 +26,12 @@ function renderRecipeCard(r, type = "ready") {
     ` : '';
 
     return `
-        <div class="bg-white rounded-2xl border ${isReady ? 'border-green-200' : 'border-orange-200'} px-6 py-4 shadow-sm flex items-center justify-between mb-3">
-            <div>
+        <div class="bg-white rounded-2xl border ${isReady ? 'border-green-200' : 'border-orange-200'} px-4 md:px-6 py-3 md:py-4 shadow-sm flex items-center justify-between gap-3 mb-3">
+            <div class="min-w-0">
                 <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-1 ${isReady ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
                     ${isReady ? '✅ Ready to Cook' : '⚠️ Almost Ready'}
                 </span>
-                <h3 class="font-semibold text-gray-800">${r.title}</h3>
+                <h3 class="font-semibold text-gray-800 text-sm md:text-base truncate">${r.title}</h3>
                 ${!isReady ? `
                     <p class="text-xs text-gray-400 mt-1">
                         ${r.missing_main?.length ? `<span class="text-red-400">Missing: ${r.missing_main.join(', ')}</span>` : ''}

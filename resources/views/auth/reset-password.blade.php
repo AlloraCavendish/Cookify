@@ -3,31 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Cookify</title>
+    <title>Reset Password - Cookify</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-orange-50 min-h-screen flex items-center justify-center px-4">
 
     <div class="w-full max-w-md">
 
-        {{-- Logo --}}
-        <div class="text-center mb-6 md:mb-8">
+        <div class="text-center mb-8">
             <span class="text-4xl md:text-5xl">🍳</span>
-            <h1 class="text-2xl md:text-3xl font-bold text-orange-900 mt-2">Cookify</h1>
-            <p class="text-gray-500 text-sm mt-1">Welcome back! Sign in to continue</p>
+            <h1 class="text-2xl md:text-3xl font-bold text-orange-900 mt-2">Reset Password</h1>
+            <p class="text-gray-500 text-sm mt-1">Enter your new password below</p>
         </div>
 
-        {{-- Card --}}
         <div class="bg-white rounded-2xl shadow-sm border border-orange-100 p-6 md:p-8">
 
-            {{-- Success status (from password reset) --}}
-            @if(session('status'))
-                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                    <p class="text-sm text-green-600">{{ session('status') }}</p>
-                </div>
-            @endif
-
-            {{-- Errors --}}
             @if($errors->any())
                 <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                     <ul class="text-sm text-red-600 space-y-1">
@@ -38,8 +28,9 @@
                 </div>
             @endif
 
-            <form method="POST" action="/login" class="space-y-5">
+            <form method="POST" action="{{ route('password.update') }}" class="space-y-5">
                 @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -49,35 +40,22 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
                     <input type="password" name="password" placeholder="••••••••" required
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent text-sm transition">
-                    <div class="text-right mt-1">
-                        <a href="{{ route('password.request') }}"
-                           class="text-xs text-orange-500 hover:text-orange-700 transition">
-                            Forgot password?
-                        </a>
-                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                    <input type="password" name="password_confirmation" placeholder="••••••••" required
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent text-sm transition">
                 </div>
 
                 <button type="submit"
                     class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
-                    Login
+                    Reset Password
                 </button>
             </form>
-        </div>
-
-        <div class="flex flex-col sm:flex-row items-center justify-between mt-6 gap-2 text-sm text-gray-500">
-            <a href="{{ route('home') }}"
-               class="inline-flex items-center gap-1.5 text-orange-600 hover:text-orange-800 font-medium transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Back to Home
-            </a>
-            <p>No account?
-                <a href="/register" class="text-orange-600 hover:text-orange-800 font-medium transition">Register here</a>
-            </p>
         </div>
 
     </div>
