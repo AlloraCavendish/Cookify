@@ -22,4 +22,12 @@ class Ingredient extends Model
             'recipe_id'
         )->withPivot('quantity', 'unit');
     }
+    
+    // Automatically lowercase name before saving
+    protected static function booted()
+    {
+        static::saving(function ($ingredient) {
+            $ingredient->name = strtolower(trim($ingredient->name));
+        });
+    }
 }

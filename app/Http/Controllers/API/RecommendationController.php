@@ -4,24 +4,32 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Recipe;
 
 class RecommendationController extends Controller
 {
     public function getRecommendations(Request $request)
     {
-        // 1️⃣ Handle ingredients input
+        // 1️⃣ Validate input
+        $request->validate([
+            'ingredients'   => 'required',
+            'page'          => 'integer|min:1',
+            'max_prep_time' => 'nullable|integer|min:1',
+            'cuisine'       => 'nullable|string|max:100',
+        ]);
+
+        // 2️⃣ Parse ingredients
         $ingredientsInput = $request->input('ingredients', []);
 
-        // If it's a string like "egg,tomato"
         if (is_string($ingredientsInput)) {
             $ingredientsInput = explode(',', $ingredientsInput);
         }
 
-        // Ensure it's an array of clean strings
         $inputIngredients = collect($ingredientsInput)
-            ->filter(fn($i) => is_string($i)) // skip arrays/null
+            ->filter(fn($i) => is_string($i))
             ->map(fn($i) => strtolower(trim($i)))
+            ->filter(fn($i) => $i !== '')
             ->unique()
             ->values()
             ->toArray();
@@ -30,86 +38,92 @@ class RecommendationController extends Controller
             return response()->json(['error' => 'No valid ingredients provided.'], 422);
         }
 
-        // 2️⃣ Pagination (optional)
-        $page = max(1, (int) $request->input('page', 1));
+        // 3️⃣ Pagination
+        $page    = max(1, (int) $request->input('page', 1));
         $perPage = 10;
 
-        // 3️⃣ Filtering (optional)
-        $query = DB::table('recipes');
+        // 4️⃣ Cache key based on filters + ingredients
+        $cacheKey = 'recommendations:' . md5(implode(',', $inputIngredients) . $request->input('cuisine') . $request->input('max_prep_time'));
 
-        if ($request->has('cuisine')) {
-            $query->where('cuisine', $request->input('cuisine'));
-        }
-        if ($request->has('max_prep_time')) {
-            $query->where('prep_time', '<=', (int) $request->input('max_prep_time'));
-        }
+        // 5️⃣ Fetch all recipes with ingredients (cached for 10 mins)
+        $allRecipes = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($request) {
+            return Recipe::query()
+                ->when($request->filled('cuisine'), fn($q) => 
+                    $q->whereRaw('LOWER(cuisine) = ?', [strtolower($request->input('cuisine'))])
+                )
+                ->when($request->filled('max_prep_time'), fn($q) => 
+                    $q->where('prep_time', '<=', (int) $request->input('max_prep_time'))
+                )
+                ->with('ingredients')
+                ->get();
+        });
 
-        $allRecipes = $query
-            ->leftJoin('recipe_ingredients', 'recipes.id', '=', 'recipe_ingredients.recipe_id')
-            ->leftJoin('ingredients', 'recipe_ingredients.ingredient_id', '=', 'ingredients.id')
-            ->select(
-                'recipes.id as recipe_id',
-                'recipes.title as recipe_title',
-                'ingredients.name as ingredient_name',
-                'ingredients.type as ingredient_type'
-            )
-            ->get()
-            ->groupBy('recipe_id');
-
-        $ready = [];
+        // 6️⃣ Match recipes against input ingredients
+        $ready     = [];
         $suggested = [];
 
-        foreach ($allRecipes as $recipeId => $items) {
-            $recipeTitle = $items[0]->recipe_title;
-            $recipeIngredients = collect($items)
-                ->filter(fn($i) => $i->ingredient_name)
-                ->map(fn($i) => [
-                    'name' => strtolower(trim($i->ingredient_name)),
-                    'type' => $i->ingredient_type ?? 'main'
-                ])
-                ->toArray();
-
-            $missingMain = [];
+        foreach ($allRecipes as $recipe) {
+            $missingMain     = [];
             $missingOptional = [];
 
-            foreach ($recipeIngredients as $ing) {
-                if (!in_array($ing['name'], $inputIngredients)) {
-                    if ($ing['type'] === 'main') {
-                        $missingMain[] = $ing['name'];
+            foreach ($recipe->ingredients as $ing) {
+                $name = strtolower(trim($ing->name));
+                $type = $ing->type ?? 'main';
+
+                if (!in_array($name, $inputIngredients)) {
+                    if ($type === 'main') {
+                        $missingMain[] = $ing->name;
                     } else {
-                        $missingOptional[] = $ing['name'];
+                        $missingOptional[] = $ing->name;
                     }
                 }
             }
 
             if (empty($missingMain)) {
-                $ready[] = ['id' => $recipeId, 'title' => $recipeTitle];
+                $ready[] = [
+                    'id'    => $recipe->id,
+                    'title' => $recipe->title,
+                ];
             } else {
                 $suggested[] = [
-                    'id' => $recipeId, // ✅ include id
-                    'title' => $recipeTitle,
-                    'missing_main' => $missingMain,
-                    'missing_optional' => $missingOptional
+                    'id'               => $recipe->id,
+                    'title'            => $recipe->title,
+                    'missing_main'     => $missingMain,
+                    'missing_optional' => $missingOptional,
+                    'missing_count'    => count($missingMain),
                 ];
             }
         }
 
-        // 4️⃣ Sort suggested by fewest missing main ingredients
-        usort($suggested, fn($a, $b) => count($a['missing_main']) <=> count($b['missing_main']));
+        // 7️⃣ Sort suggested by fewest missing main ingredients
+        usort($suggested, fn($a, $b) => $a['missing_count'] <=> $b['missing_count']);
 
-        // 5️⃣ Apply pagination
-        $totalRecipes = count($ready) + count($suggested);
-        $totalPages = ceil($totalRecipes / $perPage);
-        $start = ($page - 1) * $perPage;
-        $paginatedReady = array_slice($ready, $start, $perPage);
-        $remaining = $perPage - count($paginatedReady);
-        $paginatedSuggested = array_slice($suggested, 0, max(0, $remaining));
+        // 8️⃣ Remove helper key before returning
+        $suggested = array_map(function ($item) {
+            unset($item['missing_count']);
+            return $item;
+        }, $suggested);
+
+        // 9️⃣ Paginate ready and suggested separately
+        $readyTotal     = count($ready);
+        $suggestedTotal = count($suggested);
+        $totalPages     = max(1, ceil(($readyTotal + $suggestedTotal) / $perPage));
+        $start          = ($page - 1) * $perPage;
+
+        $paginatedReady     = array_slice($ready, $start, $perPage);
+        $remaining          = $perPage - count($paginatedReady);
+        $paginatedSuggested = $remaining > 0 ? array_slice($suggested, 0, $remaining) : [];
 
         return response()->json([
-            'ready' => $paginatedReady,
-            'suggested' => $paginatedSuggested,
-            'page' => $page,
-            'total_pages' => $totalPages
+            'ready'       => $paginatedReady,
+            'suggested'   => $paginatedSuggested,
+            'page'        => $page,
+            'total_pages' => $totalPages,
+            'meta'        => [
+                'total_ready'     => $readyTotal,
+                'total_suggested' => $suggestedTotal,
+                'per_page'        => $perPage,
+            ]
         ]);
     }
 }
